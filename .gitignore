@@ -1,0 +1,15 @@
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+*.tfvars
+*.auto.tfvars
+node_modules/
+dist/
+package-lock.json
+.env
+db.sqlite3
+.dockerignore
+venv/
+__pycache__/
+*.pyc
