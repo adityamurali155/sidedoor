@@ -4,8 +4,6 @@ A self-contained, deployable CTF environment built on AWS ECS that demonstrates 
 real-world privilege escalation chain: a web application vulnerability leading to
 cloud instance metadata theft, and a lateral pivot into a more privileged container.
 
-Built for [CSECcon](https://your-event-link-here) (UTS Cyber Security Society).
-
 ![Architecture Diagram](docs/architecture.png)
 
 ## Overview
