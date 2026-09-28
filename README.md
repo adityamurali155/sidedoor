@@ -1,0 +1,127 @@
+# SideDoor — An AWS/ECS Cloud Privilege Escalation Challenge
+
+A self-contained, deployable CTF environment built on AWS ECS that demonstrates a
+real-world privilege escalation chain: a web application vulnerability leading to
+cloud instance metadata theft, and a lateral pivot into a more privileged container.
+
+Built for [CSECcon](https://your-event-link-here) (UTS Cyber Security Society).
+
+![Architecture Diagram](docs/architecture.png)
+
+## Overview
+
+A vulnerable web app (Django + React) runs as an ECS task on a single, private
+EC2 instance. A separate, more privileged ECS task on the same host holds a
+secret. Nothing in the app directly exposes that secret — reaching it requires
+chaining together a web-layer vulnerability with a cloud-layer misconfiguration.
+
+**Objective:** gain access to the flag stored in AWS Secrets Manager.
+
+No further hints here — see [Rules of Engagement](#rules-of-engagement) below
+before you start.
+
+## Tech Stack
+
+- **Compute:** Amazon ECS (EC2 launch type, single node), Amazon Session Manager
+- **App:** Django REST Framework + React (served as one container, Whitenoise)
+- **Networking:** VPC with public/private subnet split, ALB, VPC PrivateLink
+  endpoints (no NAT Gateway / no internet egress from the private subnet)
+- **Secrets:** AWS Secrets Manager
+- **IaC:** Terraform
+- **Monitoring:** Cloudwatch
+
+## Prerequisites
+
+To deploy your own copy of this environment, you'll need:
+
+
+- [Terraform](https://developer.hashicorp.com/terraform/install) >= 1.5
+- [Docker](https://docs.docker.com/get-docker/)
+- [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html),
+  configured with credentials (`aws configure`)
+- [Session Manager plugin for the AWS CLI](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html)
+
+## Usage
+
+### 1. Provision the infrastructure
+
+```bash
+git clone https://github.com/<your-username>/sidedoor.git
+cd sidedoor
+
+terraform init
+terraform plan
+terraform apply
+```
+
+
+### 2. Build and push the application image
+
+```bash
+REPO_URL=$(terraform output -raw ecr_repo_url)
+
+docker build --platform linux/amd64 -t $REPO_URL:latest .
+docker push $REPO_URL:latest
+```
+
+### 3. Build and push the flag-holder image
+
+```bash
+docker build --platform linux/amd64 -f flag.Dockerfile -t $REPO_URL:flag-base .
+docker push $REPO_URL:flag-base
+```
+
+### 4. Force both services to deploy the newly pushed images
+
+```bash
+aws ecs update-service --cluster sidedoor-cluster --service sidedoor-app-service --force-new-deployment
+aws ecs update-service --cluster sidedoor-cluster --service sidedoor-flag-service --force-new-deployment
+```
+
+Give it a minute or two, then confirm both are healthy:
+
+```bash
+aws ecs describe-services --cluster sidedoor-cluster --services sidedoor-app-service sidedoor-flag-service \
+  --query 'services[].{name:serviceName,running:runningCount,desired:desiredCount}'
+```
+
+### 5. Access the app
+
+```bash
+terraform output alb_url
+```
+
+### Tearing down
+
+```bash
+terraform destroy
+```
+
+## Rules of Engagement
+
+- This environment is intended to be attacked **only within your own deployed
+  copy** of it, in your own AWS account.
+- The objective is to retrieve the flag through the application and AWS APIs —
+  not by reading the Terraform source, which would spoil the intended solve
+  path.
+- Estimated difficulty: intermediate. Familiarity with web application
+  vulnerabilities, the AWS CLI, and basic IAM concepts is assumed.
+
+## Writeup
+
+<details>
+<summary>⚠️ Full solve walkthrough — click to expand (spoilers)</summary>
+
+*Coming soon.*
+
+</details>
+
+---
+
+**Part 2 — Detection & Hardening:** a follow-up covering how this attack chain
+appears in CloudTrail, an ATT&CK mapping of each step, and the hardened version
+of this architecture, is in progress. Link will be added here once published.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
