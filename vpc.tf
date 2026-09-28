@@ -10,7 +10,7 @@ resource "aws_vpc" "main" {
 resource "aws_subnet" "app_subnet" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.0.0/24"
-  availability_zone = "${var.region}c"
+  availability_zone = "${var.region}a"
 
   tags = { Name = "app-private-subnet" }
 }

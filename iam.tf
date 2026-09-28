@@ -10,7 +10,24 @@ resource "aws_iam_role" "ecs_instance_role" {
     }]
   })
 }
+resource "aws_iam_role_policy" "self_enumeration" {
+  name = "self-enumeration"
+  role = aws_iam_role.ecs_instance_role.id
 
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "iam:GetRole",
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies"
+        # deliberately no iam:GetRolePolicy — see below
+      ]
+      Resource = aws_iam_role.ecs_instance_role.arn
+    }]
+  })
+}
 # Baseline permissions the ECS agent itself needs to register with the cluster, pull images, report status, etc.
 resource "aws_iam_role_policy_attachment" "ecs_agent" {
   role       = aws_iam_role.ecs_instance_role.name
@@ -19,19 +36,41 @@ resource "aws_iam_role_policy_attachment" "ecs_agent" {
 
 # The intentionally-scoped privesc path: this role can ExecuteCommand only into the specific privileged task/cluster that holds the flag.
 resource "aws_iam_role_policy" "pivot_to_privileged_task" {
-  name = "ssm-exec-into-flag-task"
+  name = "ecs-exec-scoped-policy"
   role = aws_iam_role.ecs_instance_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "ecs:ExecuteCommand",
-        "ssm:StartSession"
-      ]
-      Resource = aws_ecs_task_definition.flag_task.arn  # scoped, not "*"
-    }]
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["ecs:ListTasks", "ecs:DescribeTasks"]
+        Resource = "*"
+        Condition = {
+          ArnEquals = {
+            "ecs:cluster" = aws_ecs_cluster.main.arn
+          }
+        }
+      },
+      {
+        Effect   = "Allow"
+        Action   = "ecs:ExecuteCommand"
+        Resource = "*"
+        Condition = {
+          ArnEquals = {
+            "ecs:cluster" = aws_ecs_cluster.main.arn
+          }
+          StringEquals = {
+            "ecs:container-name" = "flag-holder"
+          }
+        }
+      },
+      {
+        Effect   = "Allow"
+        Action   = "ssm:StartSession"
+        Resource = "*"
+      }
+    ]
   })
 }
 
@@ -57,7 +96,7 @@ resource "aws_iam_role_policy_attachment" "app_execution_base" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 resource "aws_iam_role" "flag_task_execution_role" {
-  name = "flag-task-execution-role"
+  name = "secret-task-execution-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{

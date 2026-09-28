@@ -5,17 +5,13 @@ data "aws_ssm_parameter" "ecs_ami" {
 locals {
   ecs_ami_id = jsondecode(data.aws_ssm_parameter.ecs_ami.value)["image_id"]
 }
-resource "aws_key_pair" "app_admin" {
-  key_name   = "cseccon-app-admin-key"
-  public_key = file("~/.ssh/cseccon-app-key.pub")
-}
 resource "aws_instance" "ecs_node" {
   ami                    = local.ecs_ami_id
   instance_type          = "t3.small"
-  key_name               = aws_key_pair.app_admin.key_name
   iam_instance_profile   = aws_iam_instance_profile.ecs_instance_profile.name
   subnet_id              = aws_subnet.app_subnet.id
   vpc_security_group_ids = [aws_security_group.app_sg.id]
+  availability_zone       = "${var.region}a"
 
   # No public IP — same reasoning as your original app-server decision
   associate_public_ip_address = false
@@ -28,6 +24,10 @@ resource "aws_instance" "ecs_node" {
   metadata_options {
     http_tokens = "optional"  # deliberately NOT "required" — this is what keeps IMDSv1 usable for the SSRF
   }
+  tags = {
+    Name    = "${var.challenge_name}-ecs-node"
+    Purpose = "ECS cluster node for challenge"
+  }
 }
 
 resource "aws_ecs_task_definition" "app_task" {
@@ -38,12 +38,13 @@ resource "aws_ecs_task_definition" "app_task" {
   # deliberately no task_role_arn — see note below
 
   container_definitions = jsonencode([{
-    name      = "app"
-    image     = "${aws_ecr_repository.app.repository_url}:latest"
+    name      = "payroll-app"
+    image     = "${aws_ecr_repository.repo.repository_url}:latest"
     essential = true
+    memoryReservation = 512
 
     portMappings = [{
-      containerPort = 80
+      containerPort = 8000
       hostPort      = 80
       protocol      = "tcp"
     }]
@@ -70,11 +71,12 @@ resource "aws_ecs_service" "app_service" {
   # to run 2 tasks at once would just fail to place the second one
   deployment_minimum_healthy_percent = 0
   deployment_maximum_percent         = 100
+  health_check_grace_period_seconds = 120
 
   load_balancer {
     target_group_arn = aws_lb_target_group.app_tg.arn
-    container_name   = "app"
-    container_port   = 80
+    container_name   = "payroll-app"
+    container_port   = 8000
   }
 
   depends_on = [aws_lb_listener.app_listener]
@@ -93,8 +95,7 @@ resource "aws_ecs_task_definition" "flag_task" {
 
   container_definitions = jsonencode([{
     name              = "flag-holder"
-    image             = "public.ecr.aws/docker/library/alpine:latest"
-    command           = ["sh", "-c", "sleep infinity"]
+    image             = "${aws_ecr_repository.repo.repository_url}:flag-base"
     essential         = true
     memoryReservation = 64
 

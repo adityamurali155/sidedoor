@@ -6,7 +6,7 @@ variable "region" {
 variable "challenge_name" {
     description = "Name of the challenge"
     type = string
-    default = "Clusterduck"
+    default = "sidedoor55"
 }
 variable "vpc_cidr_block" {
     description = "VPC CIDR Block"

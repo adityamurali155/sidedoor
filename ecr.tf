@@ -1,18 +1,18 @@
-resource "aws_ecr_repository" "app" {
+resource "aws_ecr_repository" "repo" {
   name                 = "${var.challenge_name}-app"
   image_tag_mutability = "MUTABLE"
-
+  force_delete         = true
   image_scanning_configuration {
     scan_on_push = true
   }
 
   tags = {
-    Purpose = "ECR-repo"
+    Purpose = "${var.challenge_name}ECR-repo"
   }
 }
 
-resource "aws_ecr_lifecycle_policy" "app" {
-  repository = aws_ecr_repository.app.name
+resource "aws_ecr_lifecycle_policy" "ecr-policy" {
+  repository = aws_ecr_repository.repo.name
 
   policy = jsonencode({
     rules = [{
