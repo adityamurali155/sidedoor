@@ -97,7 +97,7 @@ export default function App() {
         if (response.ok) {
           setToken(credentials);
           localStorage.setItem('token', credentials);
-          setUser({ username, bio: "Standard worker node.", phone_number: "" });
+          setUser({ username, bio: "Standard worker.", phone_number: "" });
           setIsHrManager(data.is_hr_manager);
           setActiveTab('dashboard'); // Routes successfully directly to the main HR portal layout!
         } else {
@@ -133,7 +133,7 @@ export default function App() {
         <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-2xl">
           <h2 className="text-3xl font-extrabold text-slate-800 text-center mb-2">StaffSync Portal</h2>
           <p className="text-sm text-slate-500 text-center mb-6">
-            {isRegistering ? 'Provision a corporate node account' : 'Authenticate security instance'}
+            {isRegistering ? 'Provision a corporate node account' : 'Authenticate credentials'}
           </p>
 
           {authMessage && (
@@ -173,7 +173,7 @@ export default function App() {
               onClick={() => { setIsRegistering(!isRegistering); setAuthMessage(''); }}
               className="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition focus:outline-none cursor-pointer"
             >
-              {isRegistering ? 'Access standard user terminal? Log In' : "New installation outpost? Register context profile"}
+              {isRegistering ? 'Access standard user terminal? Log In' : "New installation outpost? Register your profile"}
             </button>
           </div>
         </div>

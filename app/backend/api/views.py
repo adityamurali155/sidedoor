@@ -26,7 +26,7 @@ class RegisterUserView(APIView):
         
         # Link a fresh, low-level non-admin profile to the user
         profile, created = UserProfile.objects.get_or_create(user=user)
-        profile.bio = "Standard worker node."
+        profile.bio = "Standard Employee."
         profile.is_hr_manager = False
         profile.save()
 
