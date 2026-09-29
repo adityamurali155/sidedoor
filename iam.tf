@@ -1,5 +1,5 @@
 resource "aws_iam_role" "ecs_instance_role" {
-  name = "ecs-container-instance-role"
+  name = "staffsync-app-server-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
