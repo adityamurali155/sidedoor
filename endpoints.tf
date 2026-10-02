@@ -6,9 +6,9 @@ locals {
     "secretsmanager",
     "ecr.api",
     "ecr.dkr",
-    "ecs",            # ← new
-    "ecs-agent",      # ← new
-    "ecs-telemetry",  # ← new
+    "ecs",
+    "ecs-agent",
+    "ecs-telemetry", 
     "logs",
   ]
 }

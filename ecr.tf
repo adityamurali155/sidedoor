@@ -27,23 +27,6 @@ resource "aws_ecr_lifecycle_policy" "ecr-policy" {
     }]
   })
 }
-
-resource "aws_ecs_cluster" "main" {
-  name = "${var.challenge_name}-cluster"
-
-  configuration {
-    execute_command_configuration {
-      logging = "OVERRIDE"
-      log_configuration {
-        cloud_watch_log_group_name = aws_cloudwatch_log_group.exec_logs.name
-      }
-    }
-  }
-
-  tags = {
-    Purpose = "ECS-cluster-hosting"
-  }
-}
 resource "aws_cloudwatch_log_group" "exec_logs" {
   name              = "/${var.challenge_name}/ecs-exec"
   retention_in_days = 7

@@ -44,7 +44,12 @@ resource "aws_iam_role_policy" "pivot_to_privileged_task" {
     Statement = [
       {
         Effect   = "Allow"
-        Action   = ["ecs:ListTasks", "ecs:DescribeTasks"]
+        Action   = ["ecs:ListClusters", "ecs:DescribeClusters"]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["ecs:ListTasks", "ecs:DescribeTasks", "ecs:DescribeTaskDefinition"]
         Resource = "*"
         Condition = {
           ArnEquals = {

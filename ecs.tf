@@ -29,6 +29,22 @@ resource "aws_instance" "ecs_node" {
     Purpose = "ECS cluster node for challenge"
   }
 }
+resource "aws_ecs_cluster" "main" {
+  name = "${var.challenge_name}-cluster"
+
+  configuration {
+    execute_command_configuration {
+      logging = "OVERRIDE"
+      log_configuration {
+        cloud_watch_log_group_name = aws_cloudwatch_log_group.exec_logs.name
+      }
+    }
+  }
+
+  tags = {
+    Purpose = "ECS-cluster-hosting"
+  }
+}
 
 resource "aws_ecs_task_definition" "app_task" {
   family                   = "${var.challenge_name}-app"
