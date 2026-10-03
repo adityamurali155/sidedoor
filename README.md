@@ -1,4 +1,4 @@
-# SideDoor — An AWS/ECS Cloud Privilege Escalation Challenge
+# SideDoor — A Chained Web-to-Cloud Privilege Escalation on AWS
 
 A self-contained, deployable CTF environment built on AWS ECS that demonstrates a
 real-world privilege escalation chain: a web application vulnerability leading to
