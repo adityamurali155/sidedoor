@@ -106,19 +106,11 @@ terraform destroy
   vulnerabilities, the AWS CLI, and basic IAM concepts is assumed.
 
 ## Writeup
-
-<details>
-<summary>⚠️ Full solve walkthrough — click to expand (spoilers)</summary>
-
-*Coming soon.*
-
-</details>
-
 ---
 
-**Part 2 — Detection & Hardening:** a follow-up covering how this attack chain
-appears in CloudTrail, an ATT&CK mapping of each step, and the hardened version
-of this architecture, is in progress. Link will be added here once published.
+Check [Walkthrough](Walkthrough.md)
+
+---
 
 ## License
 
