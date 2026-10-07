@@ -159,3 +159,26 @@ resource "aws_iam_role_policy" "flag_task_exec_session" {
     }]
   })
 }
+resource "aws_iam_role_policy" "flag_task_exec_logging" {
+  name = "${var.challenge_name}-flag-task-exec-logging"
+  role = aws_iam_role.flag_task_role.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["logs:DescribeLogGroups"]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams"
+        ]
+        Resource = "${aws_cloudwatch_log_group.exec_logs.arn}:*"
+      }
+    ]
+  })
+}

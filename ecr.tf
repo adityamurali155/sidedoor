@@ -27,7 +27,3 @@ resource "aws_ecr_lifecycle_policy" "ecr-policy" {
     }]
   })
 }
-resource "aws_cloudwatch_log_group" "exec_logs" {
-  name              = "/${var.challenge_name}/ecs-exec"
-  retention_in_days = 7
-}

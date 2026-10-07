@@ -94,12 +94,7 @@ resource "aws_ecs_service" "app_service" {
     container_name   = "payroll-app"
     container_port   = 8000
   }
-
   depends_on = [aws_lb_listener.app_listener]
-}
-resource "aws_cloudwatch_log_group" "app_logs" {
-  name              = "/ecs/${var.challenge_name}-app"
-  retention_in_days = 7
 }
 
 resource "aws_ecs_task_definition" "flag_task" {
@@ -132,4 +127,13 @@ resource "aws_ecs_service" "flag_service" {
 
   deployment_minimum_healthy_percent = 0
   deployment_maximum_percent         = 100
+}
+
+resource "aws_cloudwatch_log_group" "app_logs" {
+  name              = "/ecs/${var.challenge_name}-app"
+  retention_in_days = 7
+}
+resource "aws_cloudwatch_log_group" "exec_logs" {
+  name              = "/${var.challenge_name}/ecs-exec"
+  retention_in_days = 7
 }
