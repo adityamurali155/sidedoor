@@ -8,7 +8,7 @@ cloud instance metadata theft, and a lateral pivot into a more privileged contai
 
 ## Overview
 
-A vulnerable web app (Django + React) runs as an ECS task on a single, private EC2 instance, next to a second, more privileged task holding a secret it was never meant to reach. Nothing in the app hands that secret over directly. Getting to it means chaining a handful of top OWASP web vulnerabilities into something that reaches straight past the app and into the cloud infrastructure underneath it.
+A vulnerable web app (Django + React) runs as an ECS task on a single, private EC2 instance, next to a second, more privileged task holding a secret it was never meant to reach. Nothing in the app hands that secret over directly. Getting to it means chaining a handful of top OWASP web vulnerabilities into something that reaches straight past the web app and into the cloud infrastructure underneath it.
 
 **Objective:** gain access to the flag stored in AWS Secrets Manager.
 
