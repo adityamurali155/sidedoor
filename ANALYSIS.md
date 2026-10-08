@@ -182,14 +182,12 @@ aws cloudtrail lookup-events \
  
 | ID | Technique | Tactic | Chain Step | Detection Status |
 |---|---|---|---|---|
-| T1190 | Exploit Public-Facing Application | Initial Access | Mass assignment + IDOR (see `WALKTHROUGH.md`) | No trace in CloudTrail — web-layer, never reaches AWS management-plane logging |
-| T1552.005 | Unsecured Credentials: Cloud Instance Metadata API | Credential Access | SSRF against IMDS (Entry 02) | No trace in CloudTrail — link-local call |
+| T1190 | Exploit Public-Facing Application | Initial Access | Mass assignment + IDOR (see `WALKTHROUGH.md`) | No trace in CloudTrail: web-layer, never reaches AWS management-plane logging |
+| T1552.005 | Unsecured Credentials: Cloud Instance Metadata API | Credential Access | SSRF against IMDS (Entry 02) | No trace in CloudTrail: Link-Local call |
 | T1078.004 | Valid Accounts: Cloud Accounts | Defense Evasion | Stolen role used from outside the VPC (Entries 02–03) | Logged, not alerted |
 | T1087.004 | Account Discovery: Cloud Account | Discovery | IAM self-enumeration (Entry 04) | Logged, not alerted |
 | T1526 | Cloud Service Discovery | Discovery | ECS discovery chain (Entry 05) | Logged, not alerted |
 | T1609 | Container Administration Command | Execution | `ExecuteCommand` pivot (Entries 06–07) | Logged, not alerted |
- 
-A scored heatmap view of this table, color-coded by detection status, is committed separately — a MITRE ATT&CK Navigator layer file. Load it at [the ATT&CK Navigator](https://mitre-attack.github.io/attack-navigator/) (Open Existing Layer → Upload from local) to see it rendered against the full matrix.
  
 ---
  
