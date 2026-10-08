@@ -205,3 +205,17 @@ This is a built environment, not a live incident, so no containment action was a
  
 - **Nothing in this investigation would have surfaced on its own.** There was no alert anywhere in the chain. A real environment needs GuardDuty (or equivalent) actually running to catch the IMDSv1 credential theft and the external-IP credential use documented in Entries 02–03.
 - **Filter by identity, not by service, in any account with real background activity.** Service-level filtering mixes attacker and operator noise together.
+- **Account activity was logged by default through Cloudtrail, but none of it was alerted on**. The IAM self-enumeration, the ECS discovery, and the cross-role pivot itself. Log retention isn't detection. A real environment needs an actual alerting path wired to these event patterns, not just the ability to find them after the fact.
+- **The credential theft itself is a prevention gap, not just a detection one.** GuardDuty catches the external-IP misuse after it's already happened; enforcing IMDSv2 removes the unauthenticated metadata endpoint the SSRF step depends on, closing the vector before theft is possible at all.
+- **The web-layer steps never reached CloudTrail, and no amount of IAM visibility would change that.** Mass assignment and IDOR are invisible to every entry in this journal — they're application-layer abuse, not AWS API activity. Detecting them means a control in front of the app itself, not better log filtering.
+- **Filter by identity, not by service, in any account with real background activity.** Service-level filtering mixes attacker and operator noise together and can send an investigation down the wrong path.
+
+![Hardened architecture — proposed](docs/sidedoor-env-hardened.png)
+ 
+| Addition | Closes |
+|---|---|
+| AWS WAF (rate-based rule) | The web-layer gap above — mass assignment and IDOR never reach CloudTrail at all |
+| IMDSv2 enforcement | The credential-theft vector itself, not just its aftermath |
+| GuardDuty | External-IP credential use and IMDSv1 theft (Entries 02–03) |
+| S3 + Athena | CloudTrail's 90-day Event History window. Past that, none of this evidence stays queryable without a durable export |
+| CloudTrail → EventBridge → SNS | Addressing the alert gap running through Entries 04–07 |
