@@ -1,12 +1,6 @@
 # SideDoor — Full Walkthrough
 
 ⚠️ **Spoilers from here on.** This is the complete solution, start to finish.
-If you'd rather find your own way through it, close this tab and go back to
-the [README](README.md).
-
-Still here? Good. This is the intended path — not the only possible one,
-but the one the environment was built around. Three separate bugs chained
-together, each one handing you just enough to reach the next.
 
 ---
 
