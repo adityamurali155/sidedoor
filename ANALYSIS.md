@@ -40,7 +40,7 @@ Two practical lessons shaped how evidence was collected:
 
 **Entry 01 — Finding the right way to isolate the attacker**
 
-*What happened:* The first CloudTrail pull filtered only by service (`iam.amazonaws.com`) and came back with calls that was mostly noise mixed with the attacker's own activity. The compromised role's policy deliberately blocks `iam:GetRolePolicy`, yet that exact call showed up.
+*What happened:* The first CloudTrail pull filtered only by event source (`iam.amazonaws.com`) and came back with a mix of calls that didn't all belong to the compromised identity — including a `GetRolePolicy` call that couldn't have been the attacker's, since the compromised role's own policy explicitly denies that action.
 
 *Commands run:*
 ```bash
@@ -59,11 +59,11 @@ aws cloudtrail lookup-events \
   --region us-east-1
 ```
 
-*Why it matters:* Checking who actually made those extra calls traced them to the root account. Filtering by service alone mixes the attacker in with everyone else in an account with real activity; filtering by identity doesn't.
+*Why it matters:* Event-source filtering returns every caller touching that service, attacker and legitimate activity alike — there's no way to tell at a glance which calls belong to the identity under investigation. Filtering by identity instead pulls everything one specific caller did, across every service in a single query.
 
 **Entry 02 — Confirming the stolen credentials, and how they were obtained**
 
-*What happened:* The attacker, using the stolen session, confirmed their identity. CloudTrail recorded the call with a field called `ec2RoleDelivery` set to `"1.0"`.
+*What happened:* Using the stolen session, the attacker confirmed their identity. CloudTrail recorded the call with `ec2RoleDelivery` set to `"1.0"`.
 
 *Commands run:*
 ```bash
@@ -78,7 +78,7 @@ aws cloudtrail lookup-events \
   --region us-east-1
 ```
 
-*Why it matters:* `ec2RoleDelivery` records which version of the instance metadata service handed out the credentials. `"1.0"` means the old, unauthenticated version (IMDSv1) — no token required, which is exactly the version this environment's SSRF exploit depends on. That one field is direct proof the credentials were obtained through the unauthenticated path.
+*Why it matters:* `ec2RoleDelivery` records which version of the instance metadata service handed out the credentials. `"1.0"` means the old and unauthenticated version (IMDSv1) where no token required. This is exactly the version this environment's SSRF exploit depends on. That one field is direct proof the credentials were obtained through the unauthenticated path.
 
 *ATT&CK:* T1552.005 — Unsecured Credentials: Cloud Instance Metadata API
 
@@ -96,7 +96,7 @@ aws cloudtrail lookup-events \
  
 **Entry 04 — Proving the IAM scoping works, by watching it fail**
  
-*What happened:* The compromised role ran its own reconnaissance against its identity — and one of those calls was explicitly denied.
+*What happened:* The compromised role ran its own reconnaissance against its identity, and one of those calls was explicitly denied.
  
 *Commands run (attacker side):*
 ```bash
@@ -117,7 +117,7 @@ aws cloudtrail lookup-events \
   --output json | jq '.Events[] | select(.EventName=="GetRolePolicy")'
 ```
  
-*Why it matters:* The first three calls succeed and tell the attacker a policy exists, by name. The fourth is refused. That's stronger evidence than simply never seeing a `GetRolePolicy` call at all — it shows the boundary being actively tested and actively held, not just assumed.
+*Why it matters:* The first three calls succeed and tell the attacker a policy exists, by name. The fourth is refused. That's stronger evidence than simply never seeing a `GetRolePolicy` call at all, and it shows the boundary being actively tested and actively held, not just assumed.
  
 *ATT&CK:* T1087.004 — Account Discovery: Cloud Account
  
@@ -156,7 +156,8 @@ aws cloudtrail lookup-events \
   --region us-east-1 \
   --output json | jq '.Events[] | select(.CloudTrailEvent | contains("payroll-app"))'
 ```
-*Result:* Didnt' succeed. Returned an `InvalidParameter Exception
+*Result:* Didnt' succeed. Returned an `InvalidParameter Exception`
+
 **Entry 07 — Confirming the successful pivot via CloudTrail**
  
 *What happened:* Checking the same `ExecuteCommand` pull for the session against `flag-holder`.
@@ -197,7 +198,7 @@ A scored heatmap view of this table, color-coded by detection status, is committ
 This is a built environment, not a live incident, so no containment action was actually taken. For the record, here's the right order of operations given this setup:
  
 1. **Attach an explicit Deny policy** to `staffsync-app-server-role` — this takes effect on the very next API call, because IAM evaluates permissions live, regardless of what credentials are already cached somewhere.
-2. **Quarantine the EC2 instance** by moving it to an isolated security group, rather than terminating it outright — this preserves whatever evidence does exist on the host for further analysis, rather than destroying it.
+2. **Quarantine the EC2 instance** by moving it to an isolated security group, rather than terminating it outright. This preserves whatever evidence does exist on the host for further analysis, rather than destroying it.
 3. **Only after evidence is captured**, replace the instance and redeploy clean.
  
 ---
