@@ -59,7 +59,7 @@ aws cloudtrail lookup-events \
   --region us-east-1
 ```
 
-*Why it matters:* Event-source filtering returns every caller touching that service, attacker and legitimate activity alike — there's no way to tell at a glance which calls belong to the identity under investigation. Filtering by identity instead pulls everything one specific caller did, across every service in a single query.
+*Why it matters:* Filtering by event source returns every call made to that AWS service — attacker and legitimate activity mixed together, with no easy way to tell them apart. Filtering by identity instead pulls everything one specific caller did, across every service, in one query — isolating the attacker cleanly.
 
 **Entry 02: Confirming the stolen credentials, and how they were obtained**
 
