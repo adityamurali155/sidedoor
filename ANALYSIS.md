@@ -1,4 +1,4 @@
-# ANALYSIS.md — SideDoor Security Analysis
+# ANALYSIS.md — SideDoor Environment Analysis
 
 **Case ID:** CASE-SIDEDOOR
 **Environment:** AWS Account <ACCOUNT_ID>, `us-east-1`, cluster `sidedoor-cluster`
@@ -26,7 +26,7 @@ Two practical lessons shaped how evidence was collected:
 | IOC | Type | Notes |
 |---|---|---|
 | `staffsync-app-server-role` | IAM role (EC2 instance role) | Stolen via SSRF→IMDS; the compromised identity behind every finding below |
-| `i-03f6b5c85ff4849c4`, `i-0efb117d69b983b0d`, `i-0af03738cf5cf411e` (+ others) | EC2 instance ID | A new one per environment rebuild; each becomes a new `Username` value for the same role |
+| `<INSTANCE_ID>` | EC2 instance ID | A new one per environment rebuild; each becomes a new `Username` value for the same role |
 | `<ANALYST_SOURCE_IP>` | Source IP | Outside the VPC — every stolen-credential call came from an analyst workstation, not from inside the compromised environment |
 | `AJUN...` (rotating) | Temporary AccessKeyId | Changes every time the SSRF step is re-run; tied to `staffsync-app-server-role` sessions |
 | `sidedoor-app-execution-role` | IAM role (task execution role) | Legitimate — handles app container logging. Shows up in CloudTrail as background noise, not part of the attack |
@@ -38,7 +38,7 @@ Two practical lessons shaped how evidence was collected:
 
 ### Phase: Detection & Analysis
 
-**Entry 01 — Finding the right way to isolate the attacker**
+**Entry 01: Finding the right way to isolate the attacker**
 
 *What happened:* The first CloudTrail pull filtered only by event source (`iam.amazonaws.com`) and came back with a mix of calls that didn't all belong to the compromised identity — including a `GetRolePolicy` call that couldn't have been the attacker's, since the compromised role's own policy explicitly denies that action.
 
@@ -61,7 +61,7 @@ aws cloudtrail lookup-events \
 
 *Why it matters:* Event-source filtering returns every caller touching that service, attacker and legitimate activity alike — there's no way to tell at a glance which calls belong to the identity under investigation. Filtering by identity instead pulls everything one specific caller did, across every service in a single query.
 
-**Entry 02 — Confirming the stolen credentials, and how they were obtained**
+**Entry 02: Confirming the stolen credentials, and how they were obtained**
 
 *What happened:* Using the stolen session, the attacker confirmed their identity. CloudTrail recorded the call with `ec2RoleDelivery` set to `"1.0"`.
 
@@ -82,9 +82,9 @@ aws cloudtrail lookup-events \
 
 *ATT&CK:* T1552.005 — Unsecured Credentials: Cloud Instance Metadata API
 
-**Entry 03 — The credentials were used from outside the environment entirely**
+**Entry 03: The credentials were used from outside the environment entirely**
  
-*What happened:* Every call made with the stolen role came from `<ANALYST_SOURCE_IP>` — not from anywhere inside the VPC.
+*What happened:* Every call made with the stolen role came from `<ANALYST_SOURCE_IP>`, not from anywhere inside the VPC.
  
 *Why it matters:* Under normal operation, this role should only ever be used from inside the ECS task network. A stolen instance role being used from an external IP is a specific, well-known red flag. AWS GuardDuty has a finding type built around exactly this pattern. GuardDuty wasn't enabled on this account, so this wasn't independently confirmed against a live finding.
  
@@ -94,7 +94,7 @@ aws cloudtrail lookup-events \
  
 ### Phase: Scoping
  
-**Entry 04 — Proving the IAM scoping works, by watching it fail**
+**Entry 04: Proving the IAM scoping works, by watching it fail**
  
 *What happened:* The compromised role ran its own reconnaissance against its identity, and one of those calls was explicitly denied.
  
@@ -121,7 +121,7 @@ aws cloudtrail lookup-events \
  
 *ATT&CK:* T1087.004 — Account Discovery: Cloud Account
  
-**Entry 05 — Mapping out the ECS environment**
+**Entry 05: Mapping out the ECS environment**
  
 *What happened:* With the IAM boundary confirmed in Entry 04, checking what the same identity did in ECS before any pivot attempt.
  
@@ -143,7 +143,7 @@ aws cloudtrail lookup-events \
  
 ### Phase: Lateral Movement
  
-**Entry 06 — Looking for the `payroll-app` attempt in CloudTrail**
+**Entry 06: Looking for the `payroll-app` attempt in CloudTrail**
  
 *What happened:* An attempt to get a shell on the "payroll-app" container
  
@@ -158,7 +158,7 @@ aws cloudtrail lookup-events \
 ```
 *Result:* Didnt' succeed. Returned an `InvalidParameter Exception`
 
-**Entry 07 — Confirming the successful pivot via CloudTrail**
+**Entry 07: Confirming the successful pivot via CloudTrail**
  
 *What happened:* Checking the same `ExecuteCommand` pull for the session against `flag-holder`.
  
